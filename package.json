@@ -1,6 +1,6 @@
 {
   "name": "@bugstack/error-capture-sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Error capture SDK for Next.js API routes - automatically capture, report, and fix errors",
   "author": "",
   "license": "MIT",
