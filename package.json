@@ -1,8 +1,8 @@
 {
-  "name": "@bugstack/error-capture-sdk",
+  "name": "bugstack-sdk",
   "version": "1.0.0",
-  "description": "Error capture SDK for Next.js API routes - automatically capture, report, and fix errors",
-  "author": "",
+  "description": "AI-powered error capture SDK for Next.js API routes. Automatically captures errors and creates PRs with fixes using Claude.",
+  "author": "Mason Bachmann",
   "license": "MIT",
   "keywords": [
     "nextjs",
@@ -12,7 +12,12 @@
     "bugstack",
     "debugging",
     "monitoring",
-    "app-router"
+    "app-router",
+    "ai",
+    "bug-fixing",
+    "error-tracking",
+    "claude",
+    "automatic-fixes"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -62,5 +67,5 @@
   "bugs": {
     "url": "https://github.com/MasonBachmann7/BugStack/issues"
   },
-  "homepage": "https://github.com/MasonBachmann7/BugStack/tree/main/packages/error-capture-sdk#readme"
+  "homepage": "https://www.bugstack.ai"
 }
