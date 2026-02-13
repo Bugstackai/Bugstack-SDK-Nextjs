@@ -1,34 +1,50 @@
 /**
  * BugStack Error Capture SDK
  *
- * Capture and report errors from Next.js API routes to the BugStack service.
+ * Framework-agnostic error capture with adapters for Next.js, Express, and more.
  *
  * @packageDocumentation
  */
 
-// Main exports
-export { withErrorCapture, withBugStack } from "./wrapper";
-export { ErrorCaptureClient, BugStackClient } from "./client";
+// Export core functionality (framework-agnostic)
+export { ErrorCaptureClient, BugStackClient } from "./core/client";
+export {
+  generateErrorFingerprint,
+  generateFingerprintFromParts,
+} from "./core/fingerprint";
+export { ErrorDeduplicator } from "./core/deduplicator";
+export { RetryQueue } from "./core/queue";
 
-// Type exports
+// Export utilities
+export {
+  sanitizeHeaders,
+  sanitizeQueryParams,
+  sanitizeObject,
+  truncateBody,
+  safeParseBody,
+} from "./core/utils/sanitize";
+export {
+  parseStackTrace,
+  getFirstAppFrame,
+  getAppFrames,
+  formatStackFrames,
+} from "./core/utils/stack-parser";
+
+// Export types
 export type {
-  // Main configuration types
   ErrorCaptureConfig,
   BugStackConfig,
   ResolvedConfig,
-  RouteOptions,
-
-  // Error types
   CapturedError,
   StackFrame,
   ErrorReportPayload,
   SourceContext,
-
-  // Next.js types
   NextRouteHandler,
   RouteContext,
-} from "./types";
+  RouteOptions,
+} from "./core/types";
 
-// Utility exports (for advanced usage)
-export { parseStackTrace, getFirstAppFrame, getAppFrames } from "./stack-parser";
-export { sanitizeHeaders, sanitizeQueryParams, sanitizeObject } from "./sanitize";
+// Note: Framework-specific adapters are exported via package.json subpath exports
+// - @bugstack/sdk/next - Next.js adapter
+// - @bugstack/sdk/express - Express adapter
+// - @bugstack/sdk/generic - Generic Node.js adapter
