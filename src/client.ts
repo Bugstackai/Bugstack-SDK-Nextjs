@@ -6,7 +6,7 @@ import type {
   SourceContext,
 } from "./types";
 
-const SDK_VERSION = "0.1.0";
+const SDK_VERSION = "1.0.0";
 const DEFAULT_ENDPOINT = "http://localhost:3001/api/capture";
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_MAX_BODY_SIZE = 10000;

@@ -1,6 +1,8 @@
-# @bugstack/error-capture-sdk
+# bugstack-sdk
 
 Error capture SDK for Next.js 14+ App Router API routes. Automatically captures errors with full context and reports them to the BugStack service for AI-powered fix generation.
+
+**Get your API key at:** https://dashboard.bugstack.ai
 
 ## Features
 
@@ -14,11 +16,11 @@ Error capture SDK for Next.js 14+ App Router API routes. Automatically captures 
 ## Installation
 
 ```bash
-npm install @bugstack/error-capture-sdk
+npm install bugstack-sdk
 # or
-pnpm add @bugstack/error-capture-sdk
+pnpm add bugstack-sdk
 # or
-yarn add @bugstack/error-capture-sdk
+yarn add bugstack-sdk
 ```
 
 ## Quick Start
@@ -27,7 +29,7 @@ yarn add @bugstack/error-capture-sdk
 
 ```typescript
 // lib/bugstack.ts
-import { ErrorCaptureClient } from "@bugstack/error-capture-sdk";
+import { ErrorCaptureClient } from "bugstack-sdk";
 
 export const bugstack = ErrorCaptureClient.init({
   apiKey: process.env.BUGSTACK_API_KEY!,
@@ -42,7 +44,7 @@ export const bugstack = ErrorCaptureClient.init({
 ```typescript
 // app/api/users/route.ts
 import { NextResponse } from "next/server";
-import { withErrorCapture } from "@bugstack/error-capture-sdk";
+import { withErrorCapture } from "bugstack-sdk";
 import "@/lib/bugstack"; // Ensure client is initialized
 
 export const GET = withErrorCapture(async (request) => {
@@ -62,7 +64,7 @@ export const POST = withErrorCapture(async (request) => {
 ```typescript
 // app/api/users/[id]/route.ts
 import { NextResponse } from "next/server";
-import { withErrorCapture } from "@bugstack/error-capture-sdk";
+import { withErrorCapture } from "bugstack-sdk";
 import "@/lib/bugstack";
 
 export const GET = withErrorCapture<{ id: string }>(
@@ -85,7 +87,7 @@ export const GET = withErrorCapture<{ id: string }>(
 ### Full Configuration Options
 
 ```typescript
-import { ErrorCaptureClient } from "@bugstack/error-capture-sdk";
+import { ErrorCaptureClient } from "bugstack-sdk";
 
 ErrorCaptureClient.init({
   // Required
@@ -145,11 +147,16 @@ ErrorCaptureClient.init({
 The SDK automatically reads these environment variables:
 
 ```bash
-BUGSTACK_ENDPOINT=http://localhost:3001/api/capture
+# Required
 BUGSTACK_API_KEY=your-api-key
+
+# Optional
+BUGSTACK_ENDPOINT=https://bugstack-error-service.onrender.com/api/capture
 BUGSTACK_PROJECT_ID=my-project
-NODE_ENV=development
+NODE_ENV=production
 ```
+
+**Note:** The default endpoint is `http://localhost:3001/api/capture` for local development. Set `BUGSTACK_ENDPOINT` to the production URL shown above for deployed applications.
 
 ### Per-Route Options
 
@@ -235,7 +242,7 @@ The SDK is designed to never interfere with your application:
 ### Manual Error Reporting
 
 ```typescript
-import { ErrorCaptureClient } from "@bugstack/error-capture-sdk";
+import { ErrorCaptureClient } from "bugstack-sdk";
 
 const client = ErrorCaptureClient.getInstance();
 
@@ -250,7 +257,7 @@ if (client) {
     statusCode: 500,
     url: "https://example.com/api/custom",
     environment: "production",
-    sdkVersion: "0.1.0",
+    sdkVersion: "1.0.0",
     nodeVersion: process.version,
   });
 }
@@ -263,7 +270,7 @@ import {
   parseStackTrace,
   getFirstAppFrame,
   getAppFrames,
-} from "@bugstack/error-capture-sdk";
+} from "bugstack-sdk";
 
 const frames = parseStackTrace(error.stack);
 const firstAppFrame = getFirstAppFrame(frames); // First non-node_modules frame
@@ -277,7 +284,7 @@ import {
   sanitizeHeaders,
   sanitizeQueryParams,
   sanitizeObject,
-} from "@bugstack/error-capture-sdk";
+} from "bugstack-sdk";
 
 const safeHeaders = sanitizeHeaders(request.headers);
 const safeParams = sanitizeQueryParams(new URL(request.url));
@@ -296,7 +303,7 @@ import type {
   RouteOptions,
   NextRouteHandler,
   RouteContext,
-} from "@bugstack/error-capture-sdk";
+} from "bugstack-sdk";
 ```
 
 ## Compatibility
