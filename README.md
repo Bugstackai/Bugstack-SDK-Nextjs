@@ -1,51 +1,48 @@
 # bugstack-sdk
 
-Error capture SDK for Next.js 14+ App Router API routes. Automatically captures errors with full context and reports them to the BugStack service for AI-powered fix generation.
+Framework-agnostic error capture SDK for Node.js. Automatically captures errors with full context and reports them to BugStack for AI-powered fix generation.
 
-**Get your API key at:** https://dashboard.bugstack.ai
+**Get your API key at:** [dashboard.bugstack.ai](https://dashboard.bugstack.ai)
 
 ## Features
 
-- **Zero-config wrapping** - Simply wrap your route handlers with `withErrorCapture`
-- **Full error context** - Captures stack traces, request body, headers, query params
-- **Automatic sanitization** - Sensitive data (passwords, tokens, etc.) is automatically redacted
-- **Non-blocking** - Error reporting happens asynchronously without slowing down responses
-- **TypeScript first** - Full type safety with comprehensive type definitions
-- **Production ready** - Configurable timeouts, error handling, and kill switches
+- **Multiple frameworks** — First-class support for Next.js, Express, and generic Node.js
+- **Full error context** — Captures stack traces, request body, headers, query params, route params
+- **Automatic sanitization** — Sensitive data (passwords, tokens, API keys) is redacted automatically
+- **Non-blocking** — Error reporting is async and never slows down your responses
+- **Deduplication** — Same errors are batched within a configurable time window
+- **Retry queue** — Failed reports are retried with exponential backoff
+- **TypeScript first** — Full type safety with comprehensive type definitions
 
 ## Installation
 
 ```bash
 npm install bugstack-sdk
-# or
-pnpm add bugstack-sdk
-# or
-yarn add bugstack-sdk
 ```
 
 ## Quick Start
 
-### 1. Initialize the client (once, in a shared file)
+### Next.js (App Router)
+
+**1. Initialize the client once:**
 
 ```typescript
 // lib/bugstack.ts
 import { ErrorCaptureClient } from "bugstack-sdk";
 
-export const bugstack = ErrorCaptureClient.init({
+ErrorCaptureClient.init({
   apiKey: process.env.BUGSTACK_API_KEY!,
-  projectId: "my-project",
-  // Optional: customize endpoint
-  // endpoint: "https://your-bugstack-server.com/api/capture",
+  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
 });
 ```
 
-### 2. Wrap your API routes
+**2. Wrap your API route handlers:**
 
 ```typescript
 // app/api/users/route.ts
 import { NextResponse } from "next/server";
-import { withErrorCapture } from "bugstack-sdk";
-import "@/lib/bugstack"; // Ensure client is initialized
+import { withErrorCapture } from "bugstack-sdk/next";
+import "@/lib/bugstack"; // ensures client is initialized
 
 export const GET = withErrorCapture(async (request) => {
   const users = await db.users.findMany();
@@ -59,32 +56,141 @@ export const POST = withErrorCapture(async (request) => {
 });
 ```
 
-### 3. Dynamic routes with params
+**3. Dynamic routes with params:**
 
 ```typescript
 // app/api/users/[id]/route.ts
 import { NextResponse } from "next/server";
-import { withErrorCapture } from "bugstack-sdk";
+import { withErrorCapture } from "bugstack-sdk/next";
 import "@/lib/bugstack";
 
 export const GET = withErrorCapture<{ id: string }>(
   async (request, { params }) => {
-    const user = await db.users.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
+    const user = await db.users.findUnique({ where: { id: params.id } });
+    if (!user) throw new Error("User not found");
     return NextResponse.json({ user });
   }
 );
 ```
 
+---
+
+### Express
+
+**Option A: Error handler middleware (recommended)**
+
+```typescript
+import express from "express";
+import { bugstackErrorHandler } from "bugstack-sdk/express";
+
+const app = express();
+
+// Your routes
+app.get("/api/users", async (req, res) => {
+  const users = await db.users.findMany();
+  res.json({ users });
+});
+
+// Add BugStack error handler AFTER all routes
+app.use(
+  bugstackErrorHandler({
+    apiKey: process.env.BUGSTACK_API_KEY!,
+    endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+  })
+);
+```
+
+**Option B: Wrap individual route handlers**
+
+```typescript
+import { initBugStack, wrapExpressHandler } from "bugstack-sdk/express";
+
+// Initialize once
+app.use(
+  initBugStack({
+    apiKey: process.env.BUGSTACK_API_KEY!,
+    endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+  })
+);
+
+// Wrap specific routes
+app.get("/api/users/:id", wrapExpressHandler(async (req, res) => {
+  const user = await getUser(req.params.id);
+  res.json(user);
+}));
+```
+
+---
+
+### Generic Node.js
+
+For any Node.js application (scripts, workers, serverless functions, etc.):
+
+```typescript
+import { initBugStack, captureError, installGlobalHandlers } from "bugstack-sdk/generic";
+
+// Initialize once
+initBugStack({
+  apiKey: process.env.BUGSTACK_API_KEY!,
+  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+});
+
+// Optional: catch uncaught exceptions and unhandled rejections globally
+installGlobalHandlers();
+
+// Capture errors manually in try/catch blocks
+try {
+  await processData();
+} catch (error) {
+  await captureError(error, { operation: "processData" });
+}
+```
+
+**Wrap functions for automatic capture:**
+
+```typescript
+import { wrapFunction } from "bugstack-sdk/generic";
+
+const processData = wrapFunction(
+  async (data: Input) => {
+    // errors thrown here are automatically captured
+    return transform(data);
+  },
+  { operation: "processData" }
+);
+```
+
+**Create scoped capture functions:**
+
+```typescript
+import { createErrorCapture } from "bugstack-sdk/generic";
+
+const captureDbError = createErrorCapture({ component: "database" });
+
+try {
+  await db.query("SELECT ...");
+} catch (error) {
+  await captureDbError(error, { query: "SELECT ..." });
+}
+```
+
+---
+
+## Other Languages
+
+BugStack also provides SDKs for:
+
+| Language | Package | Install |
+|----------|---------|---------|
+| Python | [bugstack](https://pypi.org/project/bugstack/) | `pip install bugstack` |
+| Ruby | [bugstack](https://rubygems.org/gems/bugstack) | `gem install bugstack` |
+| Go | [bugstack-go](https://github.com/MasonBachmann7/Bugstack-SDK-Go) | `go get github.com/MasonBachmann7/bugstack-go` |
+
+---
+
 ## Configuration
 
-### Full Configuration Options
+### Full Options
 
 ```typescript
 import { ErrorCaptureClient } from "bugstack-sdk";
@@ -93,207 +199,128 @@ ErrorCaptureClient.init({
   // Required
   apiKey: "your-api-key",
 
-  // Optional - defaults shown
-  endpoint: "http://localhost:3001/api/capture",
-  projectId: "",
-  environment: process.env.NODE_ENV, // "development", "production", etc.
-  enabled: true, // Set to false to disable capture
+  // Endpoint (defaults to localhost for local dev)
+  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
 
-  // Request capture options
+  // Optional — defaults shown
+  projectId: "",
+  environment: process.env.NODE_ENV,     // "development", "production", etc.
+  enabled: true,                         // set false to disable capture entirely
+
+  // Request capture
   captureRequestBody: true,
   captureQueryParams: true,
   captureHeaders: true,
-  maxBodySize: 10000, // 10KB max body capture
+  maxBodySize: 10000,                    // 10KB max body capture
 
-  // Additional fields to redact (added to defaults)
+  // Additional fields to redact (added to built-in defaults)
   redactFields: ["customSecret", "internalToken"],
 
   // Custom metadata included with every error
-  metadata: {
-    service: "api",
-    version: "1.0.0",
-  },
+  metadata: { service: "api", version: "1.0.0" },
 
-  // Network options
-  timeout: 5000, // 5 second timeout for error reporting
+  // Network
+  timeout: 5000,                         // 5s timeout for error reporting
+  deduplicationWindow: 5 * 60 * 1000,   // 5 min window for dedup
 
   // Debug logging (defaults to true in development)
-  debug: true,
+  debug: false,
 
-  // Custom filter - return false to skip certain errors
+  // Custom filter — return false to skip certain errors
   shouldCapture: (error, request) => {
-    // Don't capture 404s
-    if (error.message.includes("not found")) {
-      return false;
-    }
+    if (error.message.includes("not found")) return false;
     return true;
   },
 
   // Transform errors before sending
   beforeSend: (capturedError) => {
-    // Add custom data
-    capturedError.metadata = {
-      ...capturedError.metadata,
-      customField: "value",
-    };
-    return capturedError;
-    // Return null to skip this error
+    capturedError.metadata = { ...capturedError.metadata, custom: "value" };
+    return capturedError; // return null to skip
   },
 });
 ```
 
 ### Environment Variables
 
-The SDK automatically reads these environment variables:
+The SDK reads these automatically:
 
 ```bash
-# Required
-BUGSTACK_API_KEY=your-api-key
-
-# Optional
-BUGSTACK_ENDPOINT=https://bugstack-error-service.onrender.com/api/capture
-BUGSTACK_PROJECT_ID=my-project
-NODE_ENV=production
+BUGSTACK_API_KEY=your-api-key                                              # Required
+BUGSTACK_ENDPOINT=https://bugstack-error-service.onrender.com/api/capture  # Optional
+BUGSTACK_PROJECT_ID=my-project                                             # Optional
+NODE_ENV=production                                                        # Optional
 ```
 
-**Note:** The default endpoint is `http://localhost:3001/api/capture` for local development. Set `BUGSTACK_ENDPOINT` to the production URL shown above for deployed applications.
-
-### Per-Route Options
-
-You can override options for specific routes:
+### Per-Route Options (Next.js)
 
 ```typescript
 export const POST = withErrorCapture(
-  async (request) => {
-    // handler code
-  },
-  undefined, // Use existing client config
+  async (request) => { /* ... */ },
+  undefined,  // use existing client config
   {
-    // Route-specific options
-    statusCode: 400, // Report as 400 instead of 500
-    metadata: {
-      operation: "createUser",
-      critical: true,
-    },
-    shouldCapture: (error) => {
-      // Route-specific filter
-      return error.name !== "ValidationError";
-    },
+    statusCode: 400,
+    metadata: { operation: "createUser" },
+    shouldCapture: (error) => error.name !== "ValidationError",
   }
 );
 ```
 
-## Captured Error Data
+---
+
+## Automatic Sanitization
+
+The SDK redacts sensitive data from headers, request bodies, and query params.
+
+**Built-in redacted fields:**
+`password`, `secret`, `token`, `apikey`, `api_key`, `apiKey`, `authorization`, `auth`, `credential`, `private`, `credit_card`, `creditcard`, `card_number`, `cvv`, `ssn`, `social_security`
+
+**Always-redacted headers:**
+`authorization`, `cookie`, `set-cookie`, `x-api-key`, `x-auth-token`, `proxy-authorization`
+
+Add custom fields via the `redactFields` config option.
+
+---
+
+## Error Resilience
+
+The SDK never interferes with your application:
+
+- **Network failures** — Silently retried (up to 5 times with exponential backoff)
+- **Timeouts** — Configurable, defaults to 5 seconds
+- **SDK errors** — Caught and logged in debug mode, never thrown to your app
+- **Original error preserved** — The wrapper re-throws the original error so your framework handles the response normally
+
+---
+
+## Captured Data
 
 Each error report includes:
 
-```typescript
-interface CapturedError {
-  id: string;                    // Unique error ID (err_xxx_xxx)
-  name: string;                  // Error name (TypeError, etc.)
-  message: string;               // Error message
-  stack: string;                 // Full stack trace
-  stackFrames: StackFrame[];     // Parsed stack frames
-  timestamp: string;             // ISO 8601 timestamp
-  route: string;                 // API route path
-  method: string;                // HTTP method
-  statusCode: number;            // HTTP status code
-  url: string;                   // Full request URL
-  queryParams: object;           // Query parameters (sanitized)
-  requestBody: unknown;          // Request body (sanitized)
-  requestHeaders: object;        // Headers (sanitized)
-  routeParams: object;           // Dynamic route params
-  environment: string;           // Environment name
-  projectId: string;             // Project identifier
-  sdkVersion: string;            // SDK version
-  nodeVersion: string;           // Node.js version
-  nextVersion: string;           // Next.js version
-  metadata: object;              // Custom metadata
-}
-```
+| Field | Description |
+|-------|-------------|
+| `id` | Unique error ID |
+| `fingerprint` | Stable hash for deduplication |
+| `name` | Error type (TypeError, etc.) |
+| `message` | Error message |
+| `stack` | Full stack trace |
+| `stackFrames` | Parsed stack frames with file, line, column |
+| `route` | API route path |
+| `method` | HTTP method |
+| `statusCode` | HTTP status code |
+| `url` | Full request URL |
+| `queryParams` | Sanitized query parameters |
+| `requestBody` | Sanitized request body |
+| `requestHeaders` | Sanitized headers |
+| `routeParams` | Dynamic route parameters |
+| `environment` | Environment name |
+| `projectId` | Project identifier |
+| `metadata` | Custom metadata |
 
-## Automatic Data Sanitization
+---
 
-The SDK automatically redacts sensitive fields from:
-- Request headers (Authorization, Cookie, etc.)
-- Request body
-- Query parameters
+## TypeScript
 
-**Default redacted fields:**
-- password, secret, token
-- apikey, api_key, apiKey
-- authorization, auth, credential
-- credit_card, creditcard, card_number
-- cvv, ssn, social_security
-
-Add custom fields via `redactFields` config option.
-
-## Error Handling
-
-The SDK is designed to never interfere with your application:
-
-- **Network failures** - Silently ignored, your app continues normally
-- **Timeouts** - Configurable, defaults to 5 seconds
-- **SDK errors** - Caught and logged (in debug mode), never thrown
-- **Re-throws original error** - Next.js still handles the error response
-
-## Advanced Usage
-
-### Manual Error Reporting
-
-```typescript
-import { ErrorCaptureClient } from "bugstack-sdk";
-
-const client = ErrorCaptureClient.getInstance();
-
-if (client) {
-  await client.reportError({
-    id: "manual_001",
-    name: "CustomError",
-    message: "Something went wrong",
-    timestamp: new Date().toISOString(),
-    route: "/api/custom",
-    method: "POST",
-    statusCode: 500,
-    url: "https://example.com/api/custom",
-    environment: "production",
-    sdkVersion: "1.0.0",
-    nodeVersion: process.version,
-  });
-}
-```
-
-### Stack Trace Utilities
-
-```typescript
-import {
-  parseStackTrace,
-  getFirstAppFrame,
-  getAppFrames,
-} from "bugstack-sdk";
-
-const frames = parseStackTrace(error.stack);
-const firstAppFrame = getFirstAppFrame(frames); // First non-node_modules frame
-const appFrames = getAppFrames(frames); // All application frames
-```
-
-### Sanitization Utilities
-
-```typescript
-import {
-  sanitizeHeaders,
-  sanitizeQueryParams,
-  sanitizeObject,
-} from "bugstack-sdk";
-
-const safeHeaders = sanitizeHeaders(request.headers);
-const safeParams = sanitizeQueryParams(new URL(request.url));
-const safeBody = sanitizeObject(requestBody);
-```
-
-## TypeScript Support
-
-Full type definitions are included:
+All types are exported:
 
 ```typescript
 import type {
@@ -301,14 +328,16 @@ import type {
   CapturedError,
   StackFrame,
   RouteOptions,
-  NextRouteHandler,
   RouteContext,
+  ErrorReportPayload,
+  SourceContext,
 } from "bugstack-sdk";
 ```
 
 ## Compatibility
 
 - **Next.js**: 14.0.0+
+- **Express**: 4.x or 5.x
 - **Node.js**: 18.0.0+
 - **TypeScript**: 5.0.0+ (optional)
 
