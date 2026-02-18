@@ -44,7 +44,6 @@ export type {
   RouteOptions,
 } from "./core/types";
 
-// Note: Framework-specific adapters are exported via package.json subpath exports
-// - @bugstack/sdk/next - Next.js adapter
-// - @bugstack/sdk/express - Express adapter
-// - @bugstack/sdk/generic - Generic Node.js adapter
+// Re-export Next.js adapter convenience aliases so that
+// `import { withBugStack } from 'bugstack-sdk'` works out of the box.
+export { withErrorCapture, withBugStack } from "./adapters/nextjs/index";
