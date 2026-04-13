@@ -8,6 +8,7 @@ import type { Request, Response, NextFunction, ErrorRequestHandler } from "expre
 import { ErrorCaptureClient } from "../../core/client";
 import type { ErrorCaptureConfig, CapturedError } from "../../core/types";
 import { parseStackTrace, getFirstAppFrame } from "../../core/utils/stack-parser";
+import { sanitizeObject, truncateBody } from "../../core/utils/sanitize";
 
 const SDK_VERSION = "0.2.0";
 
@@ -58,6 +59,9 @@ function sanitizeExpressHeaders(
     "set-cookie",
     "x-api-key",
     "x-auth-token",
+    "x-bugstack-api-key",
+    "proxy-authorization",
+    "www-authenticate",
   ]);
 
   for (const [key, value] of Object.entries(headers)) {
@@ -158,20 +162,14 @@ function buildCapturedError(
 
   // Add request body if configured
   if (config.captureRequestBody && req.body) {
-    // Express body has already been parsed by body-parser middleware
-    const bodyStr = JSON.stringify(req.body);
-    if (bodyStr.length > config.maxBodySize) {
-      capturedError.requestBody = {
-        __truncated: true,
-        __originalSize: bodyStr.length,
-        preview: bodyStr.slice(0, config.maxBodySize),
-      };
+    const sanitizedBody = sanitizeObject(req.body, client);
+    const bodyResult = truncateBody(sanitizedBody, config.maxBodySize);
+    capturedError.requestBody = bodyResult.body;
+    if (bodyResult.truncated) {
       capturedError.metadata = {
         ...capturedError.metadata,
         bodyTruncated: true,
       };
-    } else {
-      capturedError.requestBody = req.body;
     }
   }
 

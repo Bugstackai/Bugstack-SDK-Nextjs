@@ -55,7 +55,7 @@ export class ErrorCaptureClient {
       environment:
         config.environment ?? process.env.NODE_ENV ?? "development",
       enabled: config.enabled ?? true,
-      captureRequestBody: config.captureRequestBody ?? true,
+      captureRequestBody: config.captureRequestBody ?? false,
       captureQueryParams: config.captureQueryParams ?? true,
       captureHeaders: config.captureHeaders ?? true,
       maxBodySize: config.maxBodySize ?? DEFAULT_MAX_BODY_SIZE,

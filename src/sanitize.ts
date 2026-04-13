@@ -126,7 +126,11 @@ export function truncateBody(
   // For strings, truncate directly
   if (typeof data === "string") {
     return {
-      body: data.slice(0, maxSize) + `... ${TRUNCATE_PLACEHOLDER}`,
+      body: {
+        __truncated: true,
+        __originalSize: serialized.length,
+        preview: TRUNCATE_PLACEHOLDER,
+      },
       truncated: true,
     };
   }
@@ -165,7 +169,7 @@ export async function safeParseBody(
           body: {
             __truncated: true,
             __originalSize: text.length,
-            preview: text.slice(0, maxSize),
+            preview: TRUNCATE_PLACEHOLDER,
           },
           truncated: true,
         };
