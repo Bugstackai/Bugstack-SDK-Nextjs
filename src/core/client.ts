@@ -78,7 +78,14 @@ export class ErrorCaptureClient {
       debug: config.debug ?? !isProduction,
       shouldCapture: config.shouldCapture,
       beforeSend: config.beforeSend,
-      dropChunkErrors: config.dropChunkErrors ?? true,
+      dropChunkErrors: config.dropChunkErrors ?? false,
+      chunkErrorsEndpoint:
+        config.chunkErrorsEndpoint ??
+        deriveChunkErrorsEndpoint(
+          config.endpoint ??
+            process.env.BUGSTACK_ENDPOINT ??
+            DEFAULT_ENDPOINT,
+        ),
     };
 
     // Initialize deduplicator
@@ -159,10 +166,18 @@ export class ErrorCaptureClient {
       return false;
     }
 
-    // Default-drop chunk-load errors. They're stale-tab artifacts, not bugs,
-    // and they have no source frames the orchestrator could ever fix.
-    if (this.config.dropChunkErrors && isChunkLoadError(error)) {
-      this.log(`Dropped chunk-load error: ${error.message}`);
+    // Chunk-load errors don't go through the fix pipeline. By default they
+    // get routed to the lightweight telemetry endpoint so the dashboard can
+    // still spot CDN outages / broken deploys via spike detection. The
+    // dropChunkErrors flag short-circuits even that path.
+    if (isChunkLoadError(error)) {
+      if (!this.config.dropChunkErrors) {
+        this.sendChunkErrorTelemetry(error).catch(() => {
+          /* fire and forget — telemetry failure must never escalate */
+        });
+      } else {
+        this.log(`Dropped chunk-load error: ${error.message}`);
+      }
       return false;
     }
 
@@ -262,6 +277,42 @@ export class ErrorCaptureClient {
   }
 
   /**
+   * Forward a chunk-load error to the lightweight telemetry endpoint.
+   * Fire-and-forget — never throws, never retries, never logs loud. The
+   * point is to count these without spending real money on them.
+   */
+  private async sendChunkErrorTelemetry(error: CapturedError): Promise<void> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      await fetch(this.config.chunkErrorsEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-BugStack-API-Key": this.config.apiKey,
+          "X-BugStack-SDK-Version": SDK_VERSION,
+        },
+        body: JSON.stringify({
+          message: error.message,
+          url: error.url,
+          route: error.route,
+          userAgent:
+            (error.requestHeaders && (error.requestHeaders["user-agent"] || error.requestHeaders["User-Agent"])) ||
+            (typeof navigator !== "undefined" ? navigator.userAgent : undefined),
+          release: this.config.metadata?.release as string | undefined,
+        }),
+        signal: controller.signal,
+        // Browsers respect keepalive on cross-origin POSTs during unload.
+        keepalive: true,
+      });
+      clearTimeout(timeoutId);
+      this.log(`Chunk-error telemetry sent: ${error.message}`);
+    } catch {
+      // Intentionally silent. See method comment.
+    }
+  }
+
+  /**
    * Get the resolved configuration
    */
   getConfig(): ResolvedConfig {
@@ -353,4 +404,22 @@ export function isChunkLoadError(
     /Failed to fetch dynamically imported module/i.test(msg) ||
     /Importing a module script failed/i.test(msg)
   );
+}
+
+/**
+ * Default-derive the chunk-errors telemetry endpoint from the main capture
+ * endpoint, so callers don't have to configure both. We replace the trailing
+ * `/capture` segment (whether prefixed by `/api` or not) with `/chunk-errors`.
+ * If the URL doesn't match the expected shape we fall back to suffixing the
+ * original endpoint, which still lands on the right route in the typical
+ * `https://host/api/capture` deployment.
+ */
+function deriveChunkErrorsEndpoint(captureEndpoint: string): string {
+  if (/\/api\/capture(\/?$|\?)/.test(captureEndpoint)) {
+    return captureEndpoint.replace(/\/api\/capture/, "/api/chunk-errors");
+  }
+  if (/\/capture(\/?$|\?)/.test(captureEndpoint)) {
+    return captureEndpoint.replace(/\/capture/, "/chunk-errors");
+  }
+  return captureEndpoint.replace(/\/?$/, "/chunk-errors");
 }

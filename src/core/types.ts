@@ -111,17 +111,27 @@ export interface ErrorCaptureConfig {
 
   /**
    * Drop browser chunk-load errors (ChunkLoadError, "Loading chunk N failed",
-   * "Failed to fetch dynamically imported module") before reporting.
+   * "Failed to fetch dynamically imported module") **entirely**, including
+   * from the lightweight telemetry counter.
    *
-   * These are almost always stale-tab artifacts after a redeploy — the user
-   * has the previous build's HTML loaded and the new bundle hashes don't
-   * resolve. They aren't bugs in your code, and the orchestrator can't fix
-   * them (the stack trace is all minified bundle URLs with no source frames).
+   * By default we don't drop — we route them to the chunk-errors telemetry
+   * endpoint instead of the main fix pipeline. That keeps them out of the
+   * orchestrator (where they'd waste LLM cycles on unfixable bundle URLs)
+   * while still surfacing CDN/build outages on the dashboard via spike
+   * detection.
    *
-   * Set to `false` if you specifically want to capture them for telemetry.
-   * @default true
+   * Set to `true` to disable the telemetry path as well.
+   * @default false
    */
   dropChunkErrors?: boolean;
+
+  /**
+   * Endpoint to receive lightweight chunk-error telemetry. Defaults to
+   * deriving from `endpoint`: `/api/capture` → `/api/chunk-errors`,
+   * or `/capture` → `/chunk-errors`. Override only if your error service
+   * lives behind a different host/path for telemetry vs. main capture.
+   */
+  chunkErrorsEndpoint?: string;
 }
 
 /**
@@ -146,6 +156,7 @@ export interface ResolvedConfig {
   shouldCapture?: (error: Error, request: NextRequest) => boolean;
   beforeSend?: (error: CapturedError) => CapturedError | null;
   dropChunkErrors: boolean;
+  chunkErrorsEndpoint: string;
 }
 
 /**
