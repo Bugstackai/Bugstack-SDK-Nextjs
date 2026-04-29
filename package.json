@@ -80,11 +80,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MasonBachmann7/BugStack.git",
-    "directory": "packages/error-capture-sdk"
+    "url": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs.git"
   },
   "bugs": {
-    "url": "https://github.com/MasonBachmann7/BugStack/issues"
+    "url": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs/issues"
   },
-  "homepage": "https://github.com/MasonBachmann7/BugStack/tree/main/packages/error-capture-sdk#readme"
+  "homepage": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs#readme"
 }
