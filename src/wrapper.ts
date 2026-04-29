@@ -8,8 +8,7 @@ import type {
 } from "./types";
 import { sanitizeHeaders, sanitizeQueryParams, safeParseBody } from "./sanitize";
 import { parseStackTrace, getFirstAppFrame } from "./stack-parser";
-
-const SDK_VERSION = "0.1.0";
+import { SDK_VERSION } from "./core/sdk-version";
 
 /**
  * Generate a unique error ID

@@ -18,8 +18,7 @@ import {
   safeParseBody,
 } from "../../core/utils/sanitize";
 import { parseStackTrace, getFirstAppFrame } from "../../core/utils/stack-parser";
-
-const SDK_VERSION = "0.2.0";
+import { SDK_VERSION } from "../../core/sdk-version";
 
 /**
  * Generate a unique error ID

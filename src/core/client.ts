@@ -9,7 +9,7 @@ import { generateErrorFingerprint } from "./fingerprint";
 import { ErrorDeduplicator } from "./deduplicator";
 import { RetryQueue } from "./queue";
 
-const SDK_VERSION = "0.2.0";
+import { SDK_VERSION } from "./sdk-version";
 const DEFAULT_ENDPOINT = "http://localhost:3001/api/capture";
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_MAX_BODY_SIZE = 10000;
