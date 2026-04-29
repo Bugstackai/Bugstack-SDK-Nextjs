@@ -78,6 +78,7 @@ export class ErrorCaptureClient {
       debug: config.debug ?? !isProduction,
       shouldCapture: config.shouldCapture,
       beforeSend: config.beforeSend,
+      dropChunkErrors: config.dropChunkErrors ?? true,
     };
 
     // Initialize deduplicator
@@ -155,6 +156,13 @@ export class ErrorCaptureClient {
   ): Promise<boolean> {
     if (!this.config.enabled) {
       this.log("Error capture is disabled, skipping report");
+      return false;
+    }
+
+    // Default-drop chunk-load errors. They're stale-tab artifacts, not bugs,
+    // and they have no source frames the orchestrator could ever fix.
+    if (this.config.dropChunkErrors && isChunkLoadError(error)) {
+      this.log(`Dropped chunk-load error: ${error.message}`);
       return false;
     }
 
@@ -325,3 +333,24 @@ export class ErrorCaptureClient {
 
 // Legacy alias for backwards compatibility
 export const BugStackClient = ErrorCaptureClient;
+
+/**
+ * Recognise the family of "browser failed to load a code-split chunk" errors.
+ * Webpack and Vite emit slightly different messages; the regex covers both.
+ *
+ * Exported (via re-export from index.ts) so callers can reuse the same check
+ * in their own error boundaries when deciding whether to soft-reload.
+ */
+export function isChunkLoadError(
+  error: { name?: string; message?: string }
+): boolean {
+  if (!error) return false;
+  if (error.name === "ChunkLoadError") return true;
+  const msg = error.message || "";
+  return (
+    /Loading chunk\s+[\w-]+\s+failed/i.test(msg) ||
+    /Loading CSS chunk\s+[\w-]+\s+failed/i.test(msg) ||
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg)
+  );
+}

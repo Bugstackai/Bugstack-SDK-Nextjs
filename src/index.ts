@@ -7,7 +7,7 @@
  */
 
 // Export core functionality (framework-agnostic)
-export { ErrorCaptureClient, BugStackClient } from "./core/client";
+export { ErrorCaptureClient, BugStackClient, isChunkLoadError } from "./core/client";
 export {
   generateErrorFingerprint,
   generateFingerprintFromParts,

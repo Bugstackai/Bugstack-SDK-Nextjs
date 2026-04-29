@@ -108,6 +108,20 @@ export interface ErrorCaptureConfig {
    * Can be used to modify or enrich error data
    */
   beforeSend?: (error: CapturedError) => CapturedError | null;
+
+  /**
+   * Drop browser chunk-load errors (ChunkLoadError, "Loading chunk N failed",
+   * "Failed to fetch dynamically imported module") before reporting.
+   *
+   * These are almost always stale-tab artifacts after a redeploy — the user
+   * has the previous build's HTML loaded and the new bundle hashes don't
+   * resolve. They aren't bugs in your code, and the orchestrator can't fix
+   * them (the stack trace is all minified bundle URLs with no source frames).
+   *
+   * Set to `false` if you specifically want to capture them for telemetry.
+   * @default true
+   */
+  dropChunkErrors?: boolean;
 }
 
 /**
@@ -131,6 +145,7 @@ export interface ResolvedConfig {
   debug: boolean;
   shouldCapture?: (error: Error, request: NextRequest) => boolean;
   beforeSend?: (error: CapturedError) => CapturedError | null;
+  dropChunkErrors: boolean;
 }
 
 /**
