@@ -3,6 +3,46 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.0] — 2026-04-29
+
+### Added
+- **Source-map upload pipeline for production builds.** Customers can now
+  upload server-side source maps to bugstack so the orchestrator resolves
+  bundled stack frames (`.next/server/chunks/8393.js:1:8734`) back to
+  source-file positions (`app/api/orders/route.ts:42:5`) — turning the
+  "Could not identify primary file" failure mode into auto-fixable
+  errors. Two-step setup:
+    1. Wrap your `next.config.js`:
+       ```js
+       const { withBugstack } = require('bugstack-sdk/next-config')
+       module.exports = withBugstack({ /* your config */ })
+       ```
+       This enables `webpack.devtool = 'source-map'` for production
+       server builds, preserving any existing webpack hook.
+    2. Append to your `build` script:
+       ```json
+       "build": "next build && bugstack sourcemaps upload"
+       ```
+       The CLI walks `.next/server/**/*.map`, uploads each with the
+       active release identifier, and never fails the build.
+- New `bugstack` CLI binary (registered via `bin`) — `bugstack sourcemaps
+  upload [--api-key X] [--release Y] [--endpoint Z] [--server-dir D]
+  [--concurrency N] [--max-bytes N] [--quiet]`. Auto-detects release from
+  `BUGSTACK_RELEASE`, `RENDER_GIT_COMMIT`, `VERCEL_GIT_COMMIT_SHA`,
+  `GITHUB_SHA`, or `git rev-parse HEAD` in that order.
+- New programmatic API: `import { uploadSourceMaps } from 'bugstack-sdk/build'`
+  for callers who want to invoke the uploader from a custom Node script
+  rather than via the CLI.
+- New entry: `bugstack-sdk/next-config` exports `withBugstack(config,
+  options?)` — the Next.js config wrapper. Idempotent and pass-through
+  when `emitServerSourceMaps: false`.
+
+### Internal
+- New tsup entries for `src/build/upload`, `src/build/cli`, and
+  `src/next-config`. Bin stub at `bin/bugstack.cjs` requires the built
+  CLI so the shebang concern stays in checked-in JavaScript and out of
+  the bundler's hands.
+
 ## [2.1.0] — 2026-04-29
 
 ### Added

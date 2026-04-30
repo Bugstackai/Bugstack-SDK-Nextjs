@@ -176,6 +176,81 @@ try {
 
 ---
 
+## Source Maps for Production (Next.js)
+
+By default, server-side errors in a Next.js production build come back with stack frames that point at compiled chunks like `.next/server/chunks/8393.js:1:8734`. The bugstack orchestrator can't fix what it can't locate — so without source maps, those errors land in your dashboard as "Could not identify primary file from error" and never auto-fix.
+
+Uploading source maps closes that loop. The orchestrator resolves bundled frames back to source-file positions (`app/api/orders/route.ts:42:5`) before deciding which file to patch.
+
+### Two-step setup
+
+**1. Wrap your `next.config.js`:**
+
+```js
+const { withBugstack } = require('bugstack-sdk/next-config')
+
+module.exports = withBugstack({
+  // your existing Next.js config
+})
+```
+
+This enables `webpack.devtool = 'source-map'` for production server builds (no effect on dev or client). Any existing `webpack` hook you have is preserved and runs first.
+
+**2. Append the upload command to your `build` script:**
+
+```json
+{
+  "scripts": {
+    "build": "next build && bugstack sourcemaps upload"
+  }
+}
+```
+
+The CLI walks `.next/server/**/*.map`, uploads each to bugstack keyed by the active release, and **never fails the build** — source maps are an optimisation, not a release gate.
+
+### Required environment
+
+The CLI needs two env vars at build time. Set them in your CI / hosting provider:
+
+| Variable | Purpose |
+|---|---|
+| `BUGSTACK_PROJECT_API_KEY` | Your project SDK key (find it in your project settings on the bugstack dashboard). |
+| `BUGSTACK_ENDPOINT` | Base URL of the bugstack ingest service. The CLI appends `/api/sourcemaps/upload` automatically. |
+
+Release identifiers are auto-detected from `BUGSTACK_RELEASE`, `RENDER_GIT_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `GITHUB_SHA`, or `git rev-parse HEAD` — in that order. Override with `--release <id>` if you have a different versioning scheme.
+
+### Verifying
+
+After your next deploy with these env vars set, the build log should print something like:
+
+```
+[bugstack] Uploading 68 source map(s) to https://… (release=a9ad704)…
+[bugstack] Uploaded 68/68 maps (10.0MB) in 4.2s.
+```
+
+When a server-side error captures next, the row's stack trace and proposed fix will reference real source files (`app/api/.../route.ts`) instead of bundled chunks.
+
+### Programmatic API
+
+If you'd rather drive the upload from a custom script:
+
+```ts
+import { uploadSourceMaps } from 'bugstack-sdk/build'
+
+await uploadSourceMaps({
+  apiKey: process.env.BUGSTACK_PROJECT_API_KEY,
+  endpoint: process.env.BUGSTACK_ENDPOINT,
+  release: process.env.GIT_SHA,
+  serverDir: '.next/server',  // override for non-Next builds
+})
+```
+
+### Other build systems
+
+The CLI defaults to `.next/server` but accepts `--server-dir <path>` so it works for any directory of compiled `.js` + `.js.map` pairs (e.g. `dist/` for tsc, `build/` for CRA, custom esbuild outputs). The `withBugstack` wrapper is Next.js-specific; for other frameworks, enable source-map emission in your bundler config and run the CLI directly.
+
+---
+
 ## Other Languages
 
 BugStack also provides SDKs for:
