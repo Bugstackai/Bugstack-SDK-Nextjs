@@ -3,6 +3,15 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.1] — 2026-04-30
+
+### Fixed
+- **`bugstack` CLI is now installed on the user's `PATH`.** In `2.2.0`,
+  npm dropped the `bin[bugstack]` entry at publish time because the path
+  was prefixed with `./`, so `npx bugstack sourcemaps upload` and global
+  installs could not resolve the binary. Path normalized to
+  `bin/bugstack.cjs`.
+
 ## [2.2.0] — 2026-04-29
 
 ### Added
