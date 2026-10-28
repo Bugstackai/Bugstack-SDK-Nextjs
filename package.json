@@ -1,6 +1,6 @@
 {
   "name": "bugstack-sdk",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Framework-agnostic error capture SDK with adapters for Next.js, Express, and more - automatically capture, report, and fix errors",
   "author": "",
   "license": "MIT",
@@ -100,5 +100,5 @@
   "bugs": {
     "url": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs/issues"
   },
-  "homepage": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs#readme"
+  "homepage": "https://bugstack.ai"
 }
