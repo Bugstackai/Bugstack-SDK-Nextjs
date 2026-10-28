@@ -3,6 +3,12 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.2.2] — 2026-10-28
+
+### Fixed
+- **The package's homepage is bugstack.ai.** npm listed the GitHub README
+  as the homepage; it now links to https://bugstack.ai. No code changes.
+
 ## [2.2.1] — 2026-04-30
 
 ### Fixed
