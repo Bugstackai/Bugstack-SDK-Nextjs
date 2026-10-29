@@ -3,11 +3,18 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.2.2] — 2026-10-28
+## [2.2.2] — 2026-10-29
 
 ### Fixed
+- **Errors reach bugstack without setting an endpoint.** The default
+  endpoint was `http://localhost:3001/api/capture`, so an app that did not
+  pass `endpoint` or set `BUGSTACK_ENDPOINT` reported nothing. It is now
+  `https://dashboard.bugstack.ai/api/ingest/sdk`, the ingest endpoint, which accepts this SDK's payload and its
+  `X-BugStack-API-Key` header. Source-map uploads derive
+  `https://dashboard.bugstack.ai/api/ingest/sdk/api/sourcemaps/upload` from it. An explicit `endpoint` or
+  `BUGSTACK_ENDPOINT` still wins.
 - **The package's homepage is bugstack.ai.** npm listed the GitHub README
-  as the homepage; it now links to https://bugstack.ai. No code changes.
+  as the homepage; it now links to https://bugstack.ai.
 
 ## [2.2.1] — 2026-04-30
 

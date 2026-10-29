@@ -32,7 +32,7 @@ import { ErrorCaptureClient } from "bugstack-sdk";
 
 ErrorCaptureClient.init({
   apiKey: process.env.BUGSTACK_API_KEY!,
-  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+  endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
 });
 ```
 
@@ -95,7 +95,7 @@ app.get("/api/users", async (req, res) => {
 app.use(
   bugstackErrorHandler({
     apiKey: process.env.BUGSTACK_API_KEY!,
-    endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+    endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
   })
 );
 ```
@@ -109,7 +109,7 @@ import { initBugStack, wrapExpressHandler } from "bugstack-sdk/express";
 app.use(
   initBugStack({
     apiKey: process.env.BUGSTACK_API_KEY!,
-    endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+    endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
   })
 );
 
@@ -132,7 +132,7 @@ import { initBugStack, captureError, installGlobalHandlers } from "bugstack-sdk/
 // Initialize once
 initBugStack({
   apiKey: process.env.BUGSTACK_API_KEY!,
-  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+  endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
 });
 
 // Optional: catch uncaught exceptions and unhandled rejections globally
@@ -274,8 +274,8 @@ ErrorCaptureClient.init({
   // Required
   apiKey: "your-api-key",
 
-  // Endpoint (defaults to localhost for local dev)
-  endpoint: "https://bugstack-error-service.onrender.com/api/capture",
+  // Endpoint (defaults to the bugstack ingest endpoint)
+  endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
 
   // Optional — defaults shown
   projectId: "",
@@ -321,7 +321,7 @@ The SDK reads these automatically:
 
 ```bash
 BUGSTACK_API_KEY=your-api-key                                              # Required
-BUGSTACK_ENDPOINT=https://bugstack-error-service.onrender.com/api/capture  # Optional
+BUGSTACK_ENDPOINT=https://dashboard.bugstack.ai/api/ingest/sdk  # Optional
 BUGSTACK_PROJECT_ID=my-project                                             # Optional
 NODE_ENV=production                                                        # Optional
 ```

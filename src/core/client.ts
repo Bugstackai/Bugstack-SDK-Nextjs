@@ -10,7 +10,7 @@ import { ErrorDeduplicator } from "./deduplicator";
 import { RetryQueue } from "./queue";
 
 import { SDK_VERSION } from "./sdk-version";
-const DEFAULT_ENDPOINT = "http://localhost:3001/api/capture";
+const DEFAULT_ENDPOINT = "https://dashboard.bugstack.ai/api/ingest/sdk";
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_MAX_BODY_SIZE = 10000;
 const DEFAULT_DEDUPLICATION_WINDOW = 5 * 60 * 1000; // 5 minutes

@@ -11,7 +11,7 @@ export interface ErrorCaptureConfig {
 
   /**
    * URL of the BugStack error service endpoint
-   * @default process.env.BUGSTACK_ENDPOINT || "http://localhost:3001/api/capture"
+   * @default process.env.BUGSTACK_ENDPOINT || "https://dashboard.bugstack.ai/api/ingest/sdk"
    */
   endpoint?: string;
 

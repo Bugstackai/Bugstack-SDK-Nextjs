@@ -6,7 +6,7 @@ import type {
   SourceContext,
 } from "./types";
 import { SDK_VERSION } from "./core/sdk-version";
-const DEFAULT_ENDPOINT = "http://localhost:3001/api/capture";
+const DEFAULT_ENDPOINT = "https://dashboard.bugstack.ai/api/ingest/sdk";
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_MAX_BODY_SIZE = 10000;
 
