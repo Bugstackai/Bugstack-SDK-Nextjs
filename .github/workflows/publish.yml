@@ -8,7 +8,7 @@
 # was built from (customers can check with `npm audit signatures`).
 #
 # One-time setup on npmjs.com: bugstack-sdk → Settings → Trusted Publisher →
-# GitHub Actions, repository MasonBachmann7/Bugstack-SDK-Nextjs, workflow
+# GitHub Actions, repository Bugstackai/Bugstack-SDK-Nextjs, workflow
 # publish.yml, environment npm-publish. Then set "Publishing access" to
 # require 2FA and disallow tokens.
 
