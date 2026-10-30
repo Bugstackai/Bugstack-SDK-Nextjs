@@ -95,10 +95,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs.git"
+    "url": "https://github.com/Bugstackai/Bugstack-SDK-Nextjs.git"
   },
   "bugs": {
-    "url": "https://github.com/MasonBachmann7/Bugstack-SDK-Nextjs/issues"
+    "url": "https://github.com/Bugstackai/Bugstack-SDK-Nextjs/issues"
   },
   "homepage": "https://bugstack.ai"
 }
