@@ -17,7 +17,7 @@ Framework-agnostic error capture SDK for Node.js. Automatically captures errors 
 ## Installation
 
 ```bash
-npm install bugstack-sdk
+npm install --save-exact bugstack-sdk
 ```
 
 ## Quick Start
