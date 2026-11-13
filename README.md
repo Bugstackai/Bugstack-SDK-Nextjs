@@ -19,7 +19,7 @@ bugstack is autonomous software maintenance. It watches your app and your reposi
 ## Installation
 
 ```bash
-npm install bugstack-sdk
+npm install --save-exact bugstack-sdk
 ```
 
 ## Quick Start
