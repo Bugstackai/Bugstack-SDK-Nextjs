@@ -1,6 +1,8 @@
 # bugstack-sdk
 
-Framework-agnostic error capture SDK for Node.js. Automatically captures errors with full context and reports them to BugStack for AI-powered fix generation.
+The [bugstack](https://bugstack.ai) SDK for Node.js: Next.js, Express and any Node process.
+
+bugstack is autonomous software maintenance. It watches your app and your repository, fixes what breaks, and sends every change as a pull request you control. This SDK is how your app tells bugstack about an uncaught server error: it sends the error, its stack trace and the route, and bugstack takes it from there.
 
 **Get your API key at:** [dashboard.bugstack.ai](https://dashboard.bugstack.ai)
 
