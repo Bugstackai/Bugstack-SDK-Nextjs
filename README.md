@@ -1,8 +1,8 @@
 # bugstack-sdk
 
-The [bugstack](https://bugstack.ai) SDK for Node.js: Next.js, Express and any Node process.
+The [Bugstack](https://bugstack.ai) SDK for Node.js: Next.js, Express and any Node process.
 
-bugstack is autonomous software maintenance. It watches your app and your repository, fixes what breaks, and sends every change as a pull request you control. This SDK is how your app tells bugstack about an uncaught server error: it sends the error, its stack trace and the route, and bugstack takes it from there.
+Bugstack is autonomous software maintenance. It watches your app and your repository, fixes what breaks, and sends every change as a pull request you control. This SDK is how your app tells Bugstack about an uncaught server error: it sends the error, its stack trace and the route, and Bugstack takes it from there.
 
 **Get your API key at:** [dashboard.bugstack.ai](https://dashboard.bugstack.ai)
 
@@ -93,7 +93,7 @@ app.get("/api/users", async (req, res) => {
   res.json({ users });
 });
 
-// Add BugStack error handler AFTER all routes
+// Add the Bugstack error handler AFTER all routes
 app.use(
   bugstackErrorHandler({
     apiKey: process.env.BUGSTACK_API_KEY!,
@@ -180,7 +180,7 @@ try {
 
 ## Source Maps for Production (Next.js)
 
-By default, server-side errors in a Next.js production build come back with stack frames that point at compiled chunks like `.next/server/chunks/8393.js:1:8734`. The bugstack orchestrator can't fix what it can't locate — so without source maps, those errors land in your dashboard as "Could not identify primary file from error" and never auto-fix.
+By default, server-side errors in a Next.js production build come back with stack frames that point at compiled chunks like `.next/server/chunks/8393.js:1:8734`. The Bugstack orchestrator can't fix what it can't locate — so without source maps, those errors land in your dashboard as "Could not identify primary file from error" and never auto-fix.
 
 Uploading source maps closes that loop. The orchestrator resolves bundled frames back to source-file positions (`app/api/orders/route.ts:42:5`) before deciding which file to patch.
 
@@ -208,7 +208,7 @@ This enables `webpack.devtool = 'source-map'` for production server builds (no e
 }
 ```
 
-The CLI walks `.next/server/**/*.map`, uploads each to bugstack keyed by the active release, and **never fails the build** — source maps are an optimisation, not a release gate.
+The CLI walks `.next/server/**/*.map`, uploads each to Bugstack keyed by the active release, and **never fails the build** — source maps are an optimisation, not a release gate.
 
 ### Required environment
 
@@ -216,8 +216,8 @@ The CLI needs two env vars at build time. Set them in your CI / hosting provider
 
 | Variable | Purpose |
 |---|---|
-| `BUGSTACK_PROJECT_API_KEY` | Your project SDK key (find it in your project settings on the bugstack dashboard). |
-| `BUGSTACK_ENDPOINT` | Base URL of the bugstack ingest service. The CLI appends `/api/sourcemaps/upload` automatically. |
+| `BUGSTACK_PROJECT_API_KEY` | Your project SDK key (find it in your project settings on the Bugstack dashboard). |
+| `BUGSTACK_ENDPOINT` | Base URL of the Bugstack ingest service. The CLI appends `/api/sourcemaps/upload` automatically. |
 
 Release identifiers are auto-detected from `BUGSTACK_RELEASE`, `RENDER_GIT_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `GITHUB_SHA`, or `git rev-parse HEAD` — in that order. Override with `--release <id>` if you have a different versioning scheme.
 
@@ -255,7 +255,7 @@ The CLI defaults to `.next/server` but accepts `--server-dir <path>` so it works
 
 ## Other Languages
 
-BugStack also provides SDKs for:
+Bugstack also provides SDKs for:
 
 | Language | Package | Install |
 |----------|---------|---------|
@@ -276,7 +276,7 @@ ErrorCaptureClient.init({
   // Required
   apiKey: "your-api-key",
 
-  // Endpoint (defaults to the bugstack ingest endpoint)
+  // Endpoint (defaults to the Bugstack ingest endpoint)
   endpoint: "https://dashboard.bugstack.ai/api/ingest/sdk",
 
   // Optional — defaults shown
