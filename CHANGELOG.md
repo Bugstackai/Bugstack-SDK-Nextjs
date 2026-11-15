@@ -6,7 +6,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [2.2.2] — 2026-10-29
 
 ### Fixed
-- **Errors reach bugstack without setting an endpoint.** The default
+- **Errors reach Bugstack without setting an endpoint.** The default
   endpoint was `http://localhost:3001/api/capture`, so an app that did not
   pass `endpoint` or set `BUGSTACK_ENDPOINT` reported nothing. It is now
   `https://dashboard.bugstack.ai/api/ingest/sdk`, the ingest endpoint, which accepts this SDK's payload and its
@@ -29,7 +29,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **Source-map upload pipeline for production builds.** Customers can now
-  upload server-side source maps to bugstack so the orchestrator resolves
+  upload server-side source maps to Bugstack so the orchestrator resolves
   bundled stack frames (`.next/server/chunks/8393.js:1:8734`) back to
   source-file positions (`app/api/orders/route.ts:42:5`) — turning the
   "Could not identify primary file" failure mode into auto-fixable

@@ -1,7 +1,7 @@
 {
   "name": "bugstack-sdk",
   "version": "2.2.2",
-  "description": "The bugstack SDK for Node.js. Reports uncaught server errors from Next.js, Express and any Node process to bugstack, autonomous software maintenance.",
+  "description": "The Bugstack SDK for Node.js. Reports uncaught server errors from Next.js, Express and any Node process to Bugstack, autonomous software maintenance.",
   "author": "",
   "license": "MIT",
   "keywords": [
