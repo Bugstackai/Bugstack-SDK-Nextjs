@@ -87,8 +87,9 @@ function escapeIdent(s: string): string {
 }
 
 /**
- * A selector that names the same element across sessions: tag, #id, up to two
- * stable classes and [data-testid], for the element and up to 4 ancestors
+ * A selector that names the same element across sessions: tag, #id,
+ * [data-testid] and (on the element only) up to two stable classes, for the
+ * element and up to 4 ancestors
  * (stopping at the first id), at most 200 characters.
  */
 export function selectorFor(el: Element): string {
@@ -99,7 +100,9 @@ export function selectorFor(el: Element): string {
     let part = cur.tagName.toLowerCase();
     const id = cur.getAttribute("id");
     if (id && id.length <= 60) part += `#${escapeIdent(id)}`;
-    const classes = Array.from(cur.classList ?? []).filter(stableClass).slice(0, 2);
+    // Classes only on the element itself: an ancestor's classes are often
+    // state (`main.dark` / `main.light`) and would split one element in two.
+    const classes = depth === 0 ? Array.from(cur.classList ?? []).filter(stableClass).slice(0, 2) : [];
     for (const c of classes) part += `.${c}`;
     const testId = cur.getAttribute("data-testid");
     if (testId) part += `[data-testid="${cap(testId, 40).replace(/"/g, "")}"]`;

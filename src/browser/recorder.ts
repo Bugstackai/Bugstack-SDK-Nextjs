@@ -54,6 +54,8 @@ const MAX_ERRORS_PER_PAGE = 100;
 const SESSION_KEY = "bugstack.session";
 const SAMPLED_KEY = "bugstack.sampled";
 const FRUSTRATION_SAMPLED_KEY = "bugstack.frustration";
+/** The last link clicked, for a not-found check on the NEXT page (a framework may reload for a 404). */
+const LAST_LINK_KEY = "bugstack.lastLink";
 
 /** Thrashing: route changes alternating between two routes within this window. */
 export const THRASH_WINDOW_MS = 10_000;
@@ -472,7 +474,43 @@ export class SessionRecorder {
         }
       }
     }
+    // A link whose click reloaded the page (Next.js does for a 404): the
+    // previous page left it in sessionStorage.
+    if (initial) {
+      let stored: { at?: unknown; route?: unknown; element?: unknown } | null = null;
+      try {
+        const raw = window.sessionStorage.getItem(LAST_LINK_KEY);
+        window.sessionStorage.removeItem(LAST_LINK_KEY);
+        stored = raw ? JSON.parse(raw) : null;
+      } catch {
+        stored = null;
+      }
+      const e = stored?.element as ElementRef | undefined;
+      if (
+        stored && typeof stored.at === "number" && now - stored.at <= 5 * CLICK_WINDOW_MS &&
+        typeof stored.route === "string" && stored.route !== route && e && typeof e.selector === "string"
+      ) {
+        const from = stored.route;
+        const at = stored.at;
+        const element: ElementRef = e.label ? { selector: cap(e.selector, 200), label: cap(String(e.label), 60) } : { selector: cap(e.selector, 200) };
+        setTimeout(() => {
+          safe(() => {
+            if (this.closed || this.unloading || currentRoute() !== route || !isNotFoundPage()) return;
+            this.pushFrustration(
+              { kind: "dead_click", at: new Date(at).toISOString(), route: from, element, reason: "not_found", to: route },
+              `dead:${from}:${element.selector}:not_found`,
+            );
+          });
+        }, CLICK_WINDOW_MS);
+      }
+      return;
+    }
     // A link that navigated to a page saying it does not exist.
+    try {
+      window.sessionStorage.removeItem(LAST_LINK_KEY);
+    } catch {
+      /* private mode */
+    }
     const link = this.pendingLink;
     this.pendingLink = null;
     if (!initial && link && now - link.at <= 2 * CLICK_WINDOW_MS) {
@@ -538,7 +576,14 @@ export class SessionRecorder {
       // Every click below is frustration-only.
       if (!this.frustration) return;
       this.lastClick = { el, at: now, route, errored: false };
-      if (el.matches("a[href]")) this.pendingLink = { el, at: now, route };
+      if (el.matches("a[href]")) {
+        this.pendingLink = { el, at: now, route };
+        try {
+          window.sessionStorage.setItem(LAST_LINK_KEY, JSON.stringify({ at: now, route, element: describeElement(el) }));
+        } catch {
+          /* private mode */
+        }
+      }
       const h = this.clickHistory.get(el) ?? { times: [], burst: 0, startedAt: now, timer: null };
       h.times = h.times.filter((t) => now - t < CLICK_WINDOW_MS);
       h.times.push(now);

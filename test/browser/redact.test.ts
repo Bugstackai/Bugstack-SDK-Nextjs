@@ -31,7 +31,7 @@ describe("selectorFor", () => {
         <button class="btn btn-primary extra" data-testid="save">Save</button>
       </div></form></main>`;
     const btn = document.querySelector("button")!;
-    expect(selectorFor(btn)).toBe('main#app > form.profile > div.row > button.btn.btn-primary[data-testid="save"]');
+    expect(selectorFor(btn)).toBe('main#app > form > div > button.btn.btn-primary[data-testid="save"]');
   });
 
   it("is at most 200 characters", () => {

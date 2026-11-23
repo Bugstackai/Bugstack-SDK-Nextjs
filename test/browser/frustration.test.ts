@@ -231,6 +231,48 @@ describe("dead link", () => {
   });
 });
 
+describe("dead link that reloads the page", () => {
+  it("the next page's first load finishes the check the previous page started", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<a href="/teams">Meet our team</a>';
+    click(document.querySelector("a")!);
+    // The framework reloads: this page's recorder goes, a new one starts on /teams.
+    close();
+    sent = [];
+    history.replaceState({}, "", "/teams");
+    document.title = "404: This page could not be found.";
+    init({ key: "pk_1", frustration: true });
+    await settle(1500);
+    document.title = "";
+    expect(kinds("dead_click")).toEqual([
+      expect.objectContaining({ route: "/", element: { selector: "body > a", label: "Meet our team" }, reason: "not_found", to: "/teams" }),
+    ]);
+  });
+
+  it("a link to a page that exists is not a dead link", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<a href="/team">Team</a>';
+    click(document.querySelector("a")!);
+    close();
+    sent = [];
+    history.replaceState({}, "", "/team");
+    init({ key: "pk_1", frustration: true });
+    await settle(1500);
+    expect(kinds("dead_click")).toEqual([]);
+  });
+});
+
+describe("selectors", () => {
+  it("leave an ancestor's state classes out, so one button is one element", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<main class="dark"><button class="save">Save</button></main>';
+    const b = document.querySelector("button")!;
+    for (let i = 0; i < 3; i++) click(b);
+    await settle(1500);
+    expect((kinds("rage_click")[0] as { element: { selector: string } }).element.selector).toBe("body > main > button.save");
+  });
+});
+
 describe("caps", () => {
   it("sends at most maxPerPage frustration events a page view", async () => {
     init({ key: "pk_1", frustration: { maxPerPage: 2 } });
