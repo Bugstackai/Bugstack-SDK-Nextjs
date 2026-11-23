@@ -15,6 +15,19 @@ export {
 export { ErrorDeduplicator } from "./core/deduplicator";
 export { RetryQueue } from "./core/queue";
 
+// Caught-and-logged errors: console.error (on by default), pino, winston
+export {
+  markErrorReported,
+  loggedErrorStats,
+  bugstackPinoHooks,
+  bugstackWinstonFormat,
+} from "./core/logged-errors";
+export type {
+  LoggedErrorOptions,
+  LoggedErrorSource,
+  LoggedErrorDropRule,
+} from "./core/logged-errors";
+
 // Export utilities
 export {
   sanitizeHeaders,

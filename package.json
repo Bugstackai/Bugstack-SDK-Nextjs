@@ -1,7 +1,7 @@
 {
   "name": "bugstack-sdk",
-  "version": "2.2.2",
-  "description": "The Bugstack SDK for Node.js. Reports uncaught server errors from Next.js, Express and any Node process to Bugstack, autonomous software maintenance.",
+  "version": "2.3.0",
+  "description": "The Bugstack SDK for Node.js. Reports uncaught and caught-and-logged server errors from Next.js, Express and any Node process to Bugstack, autonomous software maintenance.",
   "author": "",
   "license": "MIT",
   "keywords": [
@@ -66,7 +66,8 @@
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "next": ">=14.0.0",
@@ -85,9 +86,12 @@
     "@types/node": "^24.0.0",
     "express": "^4.22.1",
     "next": "15.5.15",
+    "pino": "^9.14.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.9",
+    "winston": "^3.19.0"
   },
   "engines": {
     "node": ">=18.0.0"

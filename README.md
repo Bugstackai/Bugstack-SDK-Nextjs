@@ -2,13 +2,14 @@
 
 The [Bugstack](https://bugstack.ai) SDK for Node.js: Next.js, Express and any Node process.
 
-Bugstack is autonomous software maintenance. It watches your app and your repository, fixes what breaks, and sends every change as a pull request you control. This SDK is how your app tells Bugstack about an uncaught server error: it sends the error, its stack trace and the route, and Bugstack takes it from there.
+Bugstack is autonomous software maintenance. It watches your app and your repository, fixes what breaks, and sends every change as a pull request you control. This SDK is how your app tells Bugstack about a server error: an uncaught one, or one your code caught and logged with `console.error`. It sends the error, its stack trace and where it happened, and Bugstack takes it from there.
 
 **Get your API key at:** [dashboard.bugstack.ai](https://dashboard.bugstack.ai)
 
 ## Features
 
 - **Multiple frameworks** — First-class support for Next.js, Express, and generic Node.js
+- **Caught-and-logged errors** — A `console.error(err)` in a `catch` block reaches Bugstack too, on by default; pino and winston with one line each
 - **Full error context** — Captures stack traces, request body, headers, query params, route params
 - **Automatic sanitization** — Sensitive data (passwords, tokens, API keys) is redacted automatically
 - **Non-blocking** — Error reporting is async and never slows down your responses
@@ -178,6 +179,74 @@ try {
 
 ---
 
+## Caught-and-Logged Errors
+
+Most failures never reach an uncaught-exception handler. A `catch` block logs them and the app carries on:
+
+```typescript
+try {
+  await grantCredits(order);
+} catch (err) {
+  console.error("[billing] grant failed", err); // a log line nobody reads
+}
+```
+
+Once the client is initialised, the SDK forwards these to Bugstack. It is on by default, and the console line is written exactly as before.
+
+**What is forwarded:** a `console.error` call that carries an `Error` (as an argument, or as the `err` / `error` field of an object argument), or a string holding a stack trace (`console.error("failed", err.stack)`). The report is anchored at the line that logged it, so each logging site is its own issue; the original error's name and stack ride along in `metadata.causeName` / `metadata.causeStack`. A `[billing]` style tag at the start of the line becomes the route (`log:billing`).
+
+**What stays a console line:** a plain message with no error and no stack (unless you set `messages: true`), Node's own process warnings (`(node:1) [DEP0169] DeprecationWarning: …`), the SDK's own `[BugStack]` lines, and lines matching `ignore`. An error the SDK already reported (through `withErrorCapture`, `bugstackErrorHandler` or `captureError`) is not sent again when your framework logs it.
+
+**Bounded:** at most 20 forwards a minute per process, the same site and message at most once per 5 minutes, then the usual fingerprint dedup. Logged text goes through the same `redactFields` as request data (`password=…`, `token: …`), and bearer tokens are masked. Only the message and stacks are sent, never the other log arguments. Forwarding never throws into your code.
+
+```typescript
+ErrorCaptureClient.init({
+  apiKey: "your-api-key",
+
+  // captureConsoleErrors: false turns it off. To tune it instead
+  // (every field optional, defaults shown):
+  captureConsoleErrors: {
+    messages: false,          // also forward console.error lines that carry only a message
+    maxPerMinute: 20,
+    repeatWindowMs: 5 * 60 * 1000,
+    ignore: [/ECONNRESET/],   // strings or RegExps; matching lines stay console lines
+  },
+});
+```
+
+### pino
+
+```typescript
+import pino from "pino";
+import { bugstackPinoHooks } from "bugstack-sdk";
+
+const logger = pino({ hooks: bugstackPinoHooks() });
+
+logger.error({ err, orderId }, "[checkout] charge failed"); // forwarded
+```
+
+`error` and `fatal` logs are forwarded under the same rules. If you already use `hooks.logMethod`, call the returned `logMethod` from yours.
+
+### winston
+
+```typescript
+import winston from "winston";
+import { bugstackWinstonFormat } from "bugstack-sdk";
+
+const logger = winston.createLogger({
+  format: winston.format.combine(bugstackWinstonFormat(), winston.format.json()),
+  transports: [new winston.transports.Console()],
+});
+
+logger.error("[upload] write failed", err); // forwarded
+```
+
+Put `bugstackWinstonFormat()` first in the chain. `error` and higher levels are forwarded, and the log entry passes through unchanged.
+
+`loggedErrorStats()` returns how many logged errors were forwarded and how many were left as log lines, counted per rule.
+
+---
+
 ## Source Maps for Production (Next.js)
 
 By default, server-side errors in a Next.js production build come back with stack frames that point at compiled chunks like `.next/server/chunks/8393.js:1:8734`. The Bugstack orchestrator can't fix what it can't locate — so without source maps, those errors land in your dashboard as "Could not identify primary file from error" and never auto-fix.
@@ -309,6 +378,9 @@ ErrorCaptureClient.init({
     return true;
   },
 
+  // Caught-and-logged errors (console.error); see "Caught-and-Logged Errors"
+  captureConsoleErrors: true,            // false to turn off, or an options object
+
   // Transform errors before sending
   beforeSend: (capturedError) => {
     capturedError.metadata = { ...capturedError.metadata, custom: "value" };
@@ -346,7 +418,7 @@ export const POST = withErrorCapture(
 
 ## Automatic Sanitization
 
-The SDK redacts sensitive data from headers, request bodies, and query params.
+The SDK redacts sensitive data from headers, request bodies, and query params, and from the text of caught-and-logged errors.
 
 **Built-in redacted fields:**
 `password`, `secret`, `token`, `apikey`, `api_key`, `apiKey`, `authorization`, `auth`, `credential`, `private`, `credit_card`, `creditcard`, `card_number`, `cvv`, `ssn`, `social_security`
@@ -365,6 +437,7 @@ The SDK never interferes with your application:
 - **Network failures** — Silently retried (up to 5 times with exponential backoff)
 - **Timeouts** — Configurable, defaults to 5 seconds
 - **SDK errors** — Caught and logged in debug mode, never thrown to your app
+- **Console behaviour preserved** — `console.error` writes exactly what it wrote before; forwarding happens after, one tick later
 - **Original error preserved** — The wrapper re-throws the original error so your framework handles the response normally
 
 ---

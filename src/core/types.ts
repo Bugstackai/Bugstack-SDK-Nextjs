@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import type { LoggedErrorOptions, ResolvedLoggedErrorOptions } from "./logged-errors";
 
 /**
  * Configuration options for the BugStack error capture SDK
@@ -132,6 +133,19 @@ export interface ErrorCaptureConfig {
    * lives behind a different host/path for telemetry vs. main capture.
    */
   chunkErrorsEndpoint?: string;
+
+  /**
+   * Forward caught-and-logged errors: a `console.error` call that carries an
+   * Error (or a stack trace) is reported, anchored at the line that logged it.
+   * The console line is written exactly as before. On by default; `false`
+   * turns it off. Pass options to tune it, e.g. `{ messages: true }` to also
+   * forward console.error lines that carry only a message.
+   *
+   * pino and winston are covered through `bugstackPinoHooks()` and
+   * `bugstackWinstonFormat()`, which follow the same rules.
+   * @default true
+   */
+  captureConsoleErrors?: boolean | LoggedErrorOptions;
 }
 
 /**
@@ -157,6 +171,7 @@ export interface ResolvedConfig {
   beforeSend?: (error: CapturedError) => CapturedError | null;
   dropChunkErrors: boolean;
   chunkErrorsEndpoint: string;
+  captureConsoleErrors: ResolvedLoggedErrorOptions;
 }
 
 /**

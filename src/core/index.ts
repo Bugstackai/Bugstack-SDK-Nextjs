@@ -12,6 +12,19 @@ export { generateErrorFingerprint, generateFingerprintFromParts } from "./finger
 export { ErrorDeduplicator } from "./deduplicator";
 export { RetryQueue } from "./queue";
 
+// Caught-and-logged errors
+export {
+  markErrorReported,
+  loggedErrorStats,
+  bugstackPinoHooks,
+  bugstackWinstonFormat,
+} from "./logged-errors";
+export type {
+  LoggedErrorOptions,
+  LoggedErrorSource,
+  LoggedErrorDropRule,
+} from "./logged-errors";
+
 // Utilities
 export {
   sanitizeHeaders,

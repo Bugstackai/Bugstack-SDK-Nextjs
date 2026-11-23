@@ -24,7 +24,9 @@ function isInternalCode(filePath: string): boolean {
   return (
     filePath.startsWith("node:") ||
     filePath.startsWith("internal/") ||
-    !filePath.includes("/")
+    // A bare name ("native", "<anonymous>") has no directory. A Windows
+    // path has backslashes and is app code.
+    (!filePath.includes("/") && !filePath.includes("\\"))
   );
 }
 
