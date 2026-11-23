@@ -7,7 +7,7 @@ import { readFileSync } from "fs";
 // no more stale "0.2.0" header drift across major bumps.
 const pkg = JSON.parse(readFileSync("./package.json", "utf-8")) as { version: string };
 
-export default defineConfig({
+export default defineConfig([{
   entry: [
     "src/index.ts",
     "src/adapters/nextjs/index.ts",
@@ -19,7 +19,7 @@ export default defineConfig({
   ],
   format: ["esm", "cjs"],
   dts: true,
-  clean: true,
+  clean: false, // "rimraf dist" in the build script: two configs must not clean each other's output
   sourcemap: true,
   minify: false,
   splitting: false,
@@ -31,4 +31,18 @@ export default defineConfig({
   esbuildOptions(options) {
     options.platform = "node";
   },
-});
+},
+// bugstack-sdk/browser: runs in the customer's page, so it is built for the
+// browser, on its own (no node built-ins, no shared chunks).
+{
+  entry: { "browser/index": "src/browser/index.ts" },
+  format: ["esm", "cjs"],
+  dts: true,
+  clean: false,
+  sourcemap: true,
+  minify: false,
+  splitting: false,
+  treeshake: true,
+  platform: "browser",
+  target: "es2019",
+}]);
