@@ -200,6 +200,8 @@ export class SessionRecorder {
   private readonly forms = new Map<Element, { route: string; fields: Map<string, ElementRef>; attempts: number; lastAttemptAt: number }>();
   private navTrail: Array<{ route: string; at: number }> = [];
   private readonly thrashReported = new Set<string>();
+  /** Elements whose click already became an error click: never also a dead click. */
+  private readonly errorClicked = new WeakSet<Element>();
   private unloading = false;
   private closed = false;
   readonly endpoint: string;
@@ -350,6 +352,7 @@ export class SessionRecorder {
       const c = this.lastClick;
       if (this.frustration && c && !c.errored && Date.now() - c.at <= CLICK_WINDOW_MS) {
         c.errored = true;
+        this.errorClicked.add(c.el);
         const element = describeElement(c.el);
         this.pushFrustration(
           {
@@ -622,6 +625,12 @@ export class SessionRecorder {
           if (h.burst > 0) return;
           if (this.activity !== before) return;
           if (!el.isConnected) return;
+          // A click that threw is an error click, not a dead one.
+          if (this.errorClicked.has(el)) return;
+          // Resubmitting a form whose validation already failed is the form's
+          // abandon story, not a dead button.
+          const form = el.closest("form");
+          if (form && el.matches('button[type="submit"], button:not([type]), input[type="submit"]') && (this.forms.get(form)?.attempts ?? 0) > 0) return;
           // A double-click on a dead button is one dead button.
           const last = this.deadReportedAt.get(el) ?? 0;
           if (Date.now() - last < 5 * CLICK_WINDOW_MS) return;

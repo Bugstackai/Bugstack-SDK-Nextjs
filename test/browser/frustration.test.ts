@@ -115,6 +115,19 @@ describe("error click", () => {
     ]);
   });
 
+  it("a click that throws is an error click, never also a dead click", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<button id="pay">Pay now</button>';
+    const b = document.getElementById("pay")!;
+    b.addEventListener("click", () => {
+      window.dispatchEvent(new ErrorEvent("error", { message: "boom", error: new TypeError("cart is undefined") }));
+    });
+    click(b);
+    await settle(1500);
+    expect(kinds("error_click")).toHaveLength(1);
+    expect(kinds("dead_click")).toEqual([]);
+  });
+
   it("an error long after the click is not an error click", async () => {
     init({ key: "pk_1", frustration: true });
     document.body.innerHTML = '<button id="b">Go</button>';
@@ -150,6 +163,18 @@ describe("form abandon", () => {
       }),
     );
     expect(JSON.stringify(sent)).not.toContain("jo@example.com");
+  });
+
+  it("resubmitting a rejected form is not a dead click on its button", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<form id="f"><input id="email" aria-invalid="true"><p role="alert">Bad email</p><button>Create account</button></form>';
+    const form = document.getElementById("f") as HTMLFormElement;
+    form.addEventListener("submit", (e) => e.preventDefault());
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await vi.advanceTimersByTimeAsync(1100);
+    click(form.querySelector("button")!);
+    await settle(1500);
+    expect(kinds("dead_click")).toEqual([]);
   });
 
   it("a failed submit fixed by a passing one is not abandoned", async () => {
