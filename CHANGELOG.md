@@ -3,6 +3,36 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.3.0] — 2026-11-23
+
+### Added
+- **Caught-and-logged errors reach Bugstack.** A `catch` block that logs
+  an error with `console.error` and carries on was invisible: only uncaught
+  exceptions and the adapters' own wrappers reported anything. Once the
+  client is initialised, a `console.error` call carrying an `Error` (or a
+  string holding a stack trace) is now reported, anchored at the line that
+  logged it, with the original error as `metadata.causeName` /
+  `metadata.causeStack`. On by default; `captureConsoleErrors: false` turns
+  it off, and an options object tunes it (`messages`, `maxPerMinute`,
+  `repeatWindowMs`, `ignore`). The console line is written exactly as before.
+  Plain message lines, Node's process warnings and the SDK's own lines stay
+  console lines; forwards are capped at 20 a minute and once per site and
+  message per 5 minutes, then deduplicated by fingerprint as usual; logged
+  text is redacted with `redactFields`; forwarding never throws.
+- **pino and winston.** `bugstackPinoHooks()` (pino `hooks`) and
+  `bugstackWinstonFormat()` (first in a winston format chain) forward
+  error-level logs under the same rules.
+- **`markErrorReported(error)`** says an error was already sent, so the
+  console line for it is not sent again. The Next.js, Express and generic
+  adapters call it, so an error they report is not reported a second time
+  when the framework logs it. **`loggedErrorStats()`** returns forwarded and
+  dropped counts per rule.
+
+### Fixed
+- **Windows paths are app frames.** The stack parser treated any file path
+  without a `/` as Node-internal, so on Windows no frame was an app frame and
+  `metadata.sourceLocation` was never set.
+
 ## [2.2.2] — 2026-10-29
 
 ### Fixed

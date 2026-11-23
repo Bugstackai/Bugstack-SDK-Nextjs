@@ -8,6 +8,12 @@ import type {
 import { generateErrorFingerprint } from "./fingerprint";
 import { ErrorDeduplicator } from "./deduplicator";
 import { RetryQueue } from "./queue";
+import {
+  attachLoggedErrorSink,
+  detachLoggedErrorSink,
+  resolveLoggedErrorOptions,
+  type LoggedErrorSink,
+} from "./logged-errors";
 
 import { SDK_VERSION } from "./sdk-version";
 const DEFAULT_ENDPOINT = "https://dashboard.bugstack.ai/api/ingest/sdk";
@@ -48,6 +54,7 @@ export class ErrorCaptureClient {
   private static instance: ErrorCaptureClient | null = null;
   private deduplicator: ErrorDeduplicator;
   private retryQueue: RetryQueue;
+  private loggedErrorSink: LoggedErrorSink | null = null;
 
   constructor(config: ErrorCaptureConfig) {
     const isProduction = process.env.NODE_ENV === "production";
@@ -86,6 +93,7 @@ export class ErrorCaptureClient {
             process.env.BUGSTACK_ENDPOINT ??
             DEFAULT_ENDPOINT,
         ),
+      captureConsoleErrors: resolveLoggedErrorOptions(config.captureConsoleErrors),
     };
 
     // Initialize deduplicator
@@ -102,12 +110,26 @@ export class ErrorCaptureClient {
       }
     );
 
+    // Caught-and-logged errors (console.error, and pino / winston through
+    // their hooks) report through this client. See ./logged-errors.ts.
+    if (this.config.enabled) {
+      this.loggedErrorSink = {
+        options: this.config.captureConsoleErrors,
+        environment: this.config.environment,
+        projectId: this.config.projectId,
+        redactFields: this.config.redactFields,
+        report: (error) => this.reportError(error),
+      };
+      attachLoggedErrorSink(this.loggedErrorSink);
+    }
+
     this.log("BugStack client initialized", {
       endpoint: this.config.endpoint,
       projectId: this.config.projectId,
       environment: this.config.environment,
       autoFix: this.config.autoFix,
       deduplicationWindow: this.config.deduplicationWindow,
+      captureConsoleErrors: this.config.captureConsoleErrors.console,
     });
   }
 
@@ -357,6 +379,10 @@ export class ErrorCaptureClient {
    * Should be called when shutting down to prevent memory leaks
    */
   destroy(): void {
+    if (this.loggedErrorSink) {
+      detachLoggedErrorSink(this.loggedErrorSink);
+      this.loggedErrorSink = null;
+    }
     this.deduplicator.destroy();
     this.retryQueue.destroy();
   }

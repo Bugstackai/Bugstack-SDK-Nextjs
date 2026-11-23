@@ -19,6 +19,7 @@ import {
 } from "../../core/utils/sanitize";
 import { parseStackTrace, getFirstAppFrame } from "../../core/utils/stack-parser";
 import { SDK_VERSION } from "../../core/sdk-version";
+import { markErrorReported } from "../../core/logged-errors";
 
 /**
  * Generate a unique error ID
@@ -219,6 +220,10 @@ export function withErrorCapture<T = Record<string, string>>(
       const response = await handler(request, context);
       return response;
     } catch (error) {
+      // Next.js logs the re-thrown error with console.error; that line is
+      // not sent again (logged-errors.ts).
+      markErrorReported(error);
+
       // Normalize error to Error instance
       const err = error instanceof Error ? error : new Error(String(error));
 

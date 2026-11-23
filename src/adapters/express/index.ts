@@ -10,6 +10,7 @@ import type { ErrorCaptureConfig, CapturedError } from "../../core/types";
 import { parseStackTrace, getFirstAppFrame } from "../../core/utils/stack-parser";
 import { sanitizeObject, truncateBody } from "../../core/utils/sanitize";
 import { SDK_VERSION } from "../../core/sdk-version";
+import { markErrorReported } from "../../core/logged-errors";
 
 /**
  * Generate a unique error ID
@@ -222,6 +223,8 @@ export function bugstackErrorHandler(
   // Return Express error middleware
   return (err: Error, req: Request, _res: Response, next: NextFunction): void => {
     const client = ErrorCaptureClient.getInstance();
+    // Express's default handler logs it with console.error; not sent again.
+    markErrorReported(err);
 
     if (client && client.getConfig().enabled) {
       // Build and report error asynchronously (don't block response)

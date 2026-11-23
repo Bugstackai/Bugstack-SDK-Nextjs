@@ -9,6 +9,7 @@ import { ErrorCaptureClient } from "../../core/client";
 import type { ErrorCaptureConfig, CapturedError } from "../../core/types";
 import { parseStackTrace, getFirstAppFrame } from "../../core/utils/stack-parser";
 import { SDK_VERSION } from "../../core/sdk-version";
+import { markErrorReported } from "../../core/logged-errors";
 
 /**
  * Generate a unique error ID
@@ -143,6 +144,9 @@ export async function captureError(
     return false;
   }
 
+  // A console.error of this same error is not sent again.
+  markErrorReported(error);
+
   // Normalize to Error instance
   const err = error instanceof Error ? error : new Error(String(error));
 
@@ -273,4 +277,11 @@ export function createErrorCapture(baseMetadata: Record<string, unknown>) {
 
 // Re-export core functionality
 export { ErrorCaptureClient, BugStackClient } from "../../core/client";
+export {
+  markErrorReported,
+  loggedErrorStats,
+  bugstackPinoHooks,
+  bugstackWinstonFormat,
+} from "../../core/logged-errors";
+export type { LoggedErrorOptions } from "../../core/logged-errors";
 export type { ErrorCaptureConfig, CapturedError } from "../../core/types";
