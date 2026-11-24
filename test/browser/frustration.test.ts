@@ -193,6 +193,22 @@ describe("form abandon", () => {
     expect(kinds("form_abandon")).toEqual([]);
   });
 
+  it("a fixed submit that navigates away at once is a success, not an abandon", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<form id="f"><input id="email"><button>Create account</button></form>';
+    const form = document.getElementById("f") as HTMLFormElement;
+    const email = document.getElementById("email")!;
+    email.setAttribute("aria-invalid", "true");
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await vi.advanceTimersByTimeAsync(1100);
+    email.removeAttribute("aria-invalid");
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await vi.advanceTimersByTimeAsync(100);
+    history.pushState({}, "", "/welcome");
+    await settle(1500);
+    expect(kinds("form_abandon")).toEqual([]);
+  });
+
   it("native `invalid` events count as one failed attempt per submit", async () => {
     init({ key: "pk_1", frustration: true });
     document.body.innerHTML = '<form id="f"><input id="a" aria-label="Phone" required><input id="b" placeholder="City" required><button>Go</button></form>';

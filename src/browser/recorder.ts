@@ -197,7 +197,10 @@ export class SessionRecorder {
   private frustrationThisPage = 0;
   private lastClick: { el: Element; at: number; route: string; errored: boolean } | null = null;
   private pendingLink: { el: Element; at: number; route: string } | null = null;
-  private readonly forms = new Map<Element, { route: string; fields: Map<string, ElementRef>; attempts: number; lastAttemptAt: number }>();
+  private readonly forms = new Map<
+    Element,
+    { route: string; fields: Map<string, ElementRef>; attempts: number; lastAttemptAt: number; submittedAt: number }
+  >();
   private navTrail: Array<{ route: string; at: number }> = [];
   private readonly thrashReported = new Set<string>();
   /** Elements whose click already became an error click: never also a dead click. */
@@ -380,7 +383,7 @@ export class SessionRecorder {
   private formState(form: Element) {
     let st = this.forms.get(form);
     if (!st) {
-      st = { route: currentRoute(), fields: new Map(), attempts: 0, lastAttemptAt: 0 };
+      st = { route: currentRoute(), fields: new Map(), attempts: 0, lastAttemptAt: 0, submittedAt: 0 };
       this.forms.set(form, st);
     }
     return st;
@@ -420,6 +423,9 @@ export class SessionRecorder {
       const form = target && (target as Node).nodeType === 1 ? (target as Element) : null;
       if (!form || !form.matches("form")) return;
       const route = currentRoute();
+      // A submit that leaves the page before the check runs passed (flushForms).
+      const pending = this.forms.get(form);
+      if (pending) pending.submittedAt = Date.now();
       setTimeout(() => {
         safe(() => {
           if (this.closed || this.unloading) return;
@@ -445,8 +451,12 @@ export class SessionRecorder {
   /** The page is being left: every form whose submit failed and never passed was abandoned. */
   private flushForms(): void {
     safe(() => {
+      const now = Date.now();
       for (const [form, st] of this.forms) {
         if (st.attempts === 0) continue;
+        // Left right after a submit native validation let through: the submit
+        // navigated, which is what a submit that passed does.
+        if (st.submittedAt > st.lastAttemptAt && now - st.submittedAt <= CLICK_WINDOW_MS) continue;
         const element = describeForm(form);
         this.pushFrustration(
           { kind: "form_abandon", at: nowIso(), route: st.route, element, fields: [...st.fields.values()], attempts: Math.min(100, st.attempts) },
