@@ -303,6 +303,19 @@ describe("dead link that reloads the page", () => {
   });
 });
 
+describe("controls already selected", () => {
+  it("clicking the active filter or the current page link is not a dead click", async () => {
+    init({ key: "pk_1", frustration: true });
+    document.body.innerHTML = '<button id="f" aria-pressed="true">all</button><a id="c" href="/" aria-current="page">Home</a><button id="g" aria-pressed="false">open</button>';
+    for (const id of ["f", "c", "g"]) {
+      click(document.getElementById(id)!);
+      await vi.advanceTimersByTimeAsync(1100);
+    }
+    await settle(10);
+    expect(kinds("dead_click").map((e) => (e as { element: { label?: string } }).element.label)).toEqual(["open"]);
+  });
+});
+
 describe("selectors", () => {
   it("leave an ancestor's state classes out, so one button is one element", async () => {
     init({ key: "pk_1", frustration: true });

@@ -635,6 +635,9 @@ export class SessionRecorder {
           if (h.burst > 0) return;
           if (this.activity !== before) return;
           if (!el.isConnected) return;
+          // A control already in the state it selects (the active filter, the
+          // current tab or page) does nothing when clicked, by design.
+          if (el.matches('[aria-pressed="true"], [aria-selected="true"], [aria-checked="true"], [aria-current]:not([aria-current="false"])')) return;
           // A click that threw is an error click, not a dead one.
           if (this.errorClicked.has(el)) return;
           // Resubmitting a form whose validation already failed is the form's
