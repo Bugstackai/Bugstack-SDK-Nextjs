@@ -1,7 +1,7 @@
 {
   "name": "bugstack-sdk",
-  "version": "2.3.0",
-  "description": "The Bugstack SDK for Node.js. Reports uncaught and caught-and-logged server errors from Next.js, Express and any Node process to Bugstack, autonomous software maintenance.",
+  "version": "2.4.0",
+  "description": "The Bugstack SDK for Node.js and the browser. Reports uncaught and caught-and-logged server errors from Next.js, Express and any Node process, and, from the browser, errors, failed requests and opt-in frustration signals (rage, dead and error clicks, abandoned forms) to Bugstack, autonomous software maintenance.",
   "author": "",
   "license": "MIT",
   "keywords": [
@@ -29,6 +29,11 @@
       "types": "./dist/adapters/nextjs/index.d.ts",
       "import": "./dist/adapters/nextjs/index.mjs",
       "require": "./dist/adapters/nextjs/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.mjs",
+      "require": "./dist/browser/index.js"
     },
     "./express": {
       "types": "./dist/adapters/express/index.d.ts",
@@ -61,7 +66,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rimraf dist && tsup",
     "dev": "tsup --watch",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
@@ -70,8 +75,8 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "next": ">=14.0.0",
-    "express": "^4.0.0 || ^5.0.0"
+    "express": "^4.0.0 || ^5.0.0",
+    "next": ">=14.0.0"
   },
   "peerDependenciesMeta": {
     "next": {
@@ -85,6 +90,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^24.0.0",
     "express": "^4.22.1",
+    "happy-dom": "^21.0.4",
     "next": "15.5.15",
     "pino": "^9.14.0",
     "rimraf": "^5.0.5",

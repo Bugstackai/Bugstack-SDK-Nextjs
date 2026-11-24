@@ -3,6 +3,33 @@
 All notable changes to `bugstack-sdk` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.4.0] — unreleased
+
+### Added
+- **Browser capture: `bugstack-sdk/browser`.** A dependency-free entry for
+  the customer's page: uncaught errors and unhandled rejections, failed
+  requests (5xx or no answer) and the route trail, sent to Bugstack's session
+  ingest with the repository's public BROWSER key (never the server key).
+  Nothing runs until you call `init()`; it is a no-op on the server and
+  never throws. Ported from the Bugstack monorepo's `@bugstack/browser`,
+  which was never published.
+- **Frustration signals, OFF by default.** `init({ key, frustration: true })`
+  also records rage clicks (3+ on one element within 1 s), dead clicks (a
+  button or link that changed nothing within 1 s, or a link that landed on a
+  not-found page), error clicks (a click followed within 1 s by an uncaught
+  error), abandoned forms (a submit that hit a validation error, then left
+  without a submit that passed) and thrashing (4+ route changes in 10 s
+  alternating between two routes). Each carries a redacted element
+  descriptor: a stable selector (tag, id, stable classes, `data-testid`) and
+  a visible label cut to 60 characters. Never an input's value, a query
+  string or a request body. `frustration: { sampleRate, maxPerPage }` samples
+  sessions (once per session) and caps events per page view (default 20).
+  The DOM observer the dead-click check needs is installed only when
+  frustration is on.
+
+### Changed
+- `npm run build` cleans `dist` once before tsup (two build configs now).
+
 ## [2.3.0] — 2026-11-23
 
 ### Added

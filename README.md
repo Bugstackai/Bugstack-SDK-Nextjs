@@ -247,6 +247,48 @@ Put `bugstackWinstonFormat()` first in the chain. `error` and higher levels are 
 
 ---
 
+## Browser Capture and Frustration Signals
+
+`bugstack-sdk/browser` runs in your users' browsers. It reports uncaught
+errors, failed requests and the route trail that led there, and, if you opt
+in, **frustration signals**: rage clicks, dead clicks, clicks followed by an
+error, forms abandoned after a validation error, and rapid back-and-forth
+between two pages. Bugstack groups them across sessions and opens an
+incident only when many users hit the same element far more than the rest
+of that page, then anchors it to the page and component that render it.
+
+Use the repository's **browser key** from its settings in Bugstack. It is
+public by design and accepted only from your allowed origins; never put the
+server `apiKey` in the browser.
+
+```ts
+// instrumentation-client.ts (Next.js 15.3+, App Router or Pages Router)
+import { init } from "bugstack-sdk/browser";
+
+init({
+  key: process.env.NEXT_PUBLIC_BUGSTACK_BROWSER_KEY!,
+  frustration: true, // OFF unless set
+});
+```
+
+On older Next.js versions, call `init()` once from a `"use client"`
+component in the root layout (App Router) or inside `useEffect` in
+`pages/_app.tsx` (Pages Router). `setUser({ id, email })` names the user;
+Bugstack stores only a keyed hash of it.
+
+| Option | Default | What it does |
+|---|---|---|
+| `key` | required | The repository's browser key |
+| `sampleRate` | `1` | Share of sessions recorded at all, decided once per session |
+| `frustration` | off | `true`, or `{ sampleRate, maxPerPage }`: share of recorded sessions that also record frustration, and the most frustration events per page view (default 20) |
+| `release`, `environment` | none | Sent with every batch |
+
+What is recorded: element selectors (tag, id, stable classes,
+`data-testid`) and visible labels cut to 60 characters, route paths without
+query strings, request method, path and status. Never input values, text you
+type, query strings, headers or bodies. Every handler is wrapped: the SDK
+never throws into your page and hands back the same responses and errors.
+
 ## Source Maps for Production (Next.js)
 
 By default, server-side errors in a Next.js production build come back with stack frames that point at compiled chunks like `.next/server/chunks/8393.js:1:8734`. The Bugstack orchestrator can't fix what it can't locate — so without source maps, those errors land in your dashboard as "Could not identify primary file from error" and never auto-fix.
